@@ -27,7 +27,7 @@
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
     <TargetLinuxPlatform>Raspberry</TargetLinuxPlatform>
     <LinuxProjectType>{8748239F-558C-44D1-944B-07B09C35B330}</LinuxProjectType>
-    <ProjectName>Motorensteuerung</ProjectName>
+    <ProjectName>Buggy</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
@@ -52,7 +52,7 @@
       <LibraryDependencies>wiringPi</LibraryDependencies>
     </Link>
     <RemotePostBuildEvent>
-      <Command>gcc -Wall -o programm.exe main.cpp MotorhatDriver.cpp BuggyController.cpp -lwiringPi</Command>
+      <Command>g++ -Wall -o programm.exe main.cpp MotorhatDriver.cpp BuggyController.cpp UltraSonicDriver.cpp -lwiringPi</Command>
       <Message>
       </Message>
     </RemotePostBuildEvent>
@@ -68,11 +68,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BuggyController.cpp" />
+    <ClCompile Include="UltraSonicDriver.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MotorhatDriver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuggyController.h" />
+    <ClInclude Include="UltraSonicDriver.h" />
     <ClInclude Include="MotorhatDriver.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
