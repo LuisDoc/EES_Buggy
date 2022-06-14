@@ -9,7 +9,17 @@
 #include "MotorhatDriver.h"
 #include "BuggyController.h"
 #include "UltraSonicDriver.h"
+#include "AudioPlayer.h"
 
+/*
+* Global Vars
+*/
+// Objects of Controll-Classes
+BuggyController bc;
+UltraSonicDriver us;
+AudioPlayer ap;
+
+//Stop Programm when STRG + C pressed
 void signalHandler(int signum);
 
 // Buggy fährt ein Rechteck ab
@@ -18,7 +28,7 @@ void square(BuggyController bc) {
 		bc.driveForward(1000);
 		bc.turnRightFWD(970);
 	}
-	
+
 }
 // Buggy fährt einen Slalom
 void slalom(BuggyController bc) {
@@ -30,23 +40,29 @@ void slalom(BuggyController bc) {
 	bc.turnRightFWD(970);
 	bc.driveForward(500);
 }
-
-//Globale Variablen
-BuggyController bc;
-UltraSonicDriver us;
+// Ultraschallsensor Test Methode
+void testUltraschallSensor(UltraSonicDriver us) {
+	std::cout << "Abstand: " << us.measureDistance() << std::endl;
+}
 
 int main(void)
 {
 	// Csignal für Abbruch über STRG-C
 	signal(SIGINT, signalHandler);
-
+	//Notify Programm start on console
 	std::cout << "Programm started" << std::endl;
-	//Start programm code
-	delay(2000);
-	bc.driveForward(5000);
 
-	//End programm code
 
+	do{
+		//Start Programm Code here
+		
+		bc.driveForward(3000);
+		delay(1000);
+		
+		//End Programm Code here
+	} while (0);
+
+	//Stop Buggy if programm is done
 	bc.driveRelease();
 	return EXIT_SUCCESS;
 }
@@ -55,8 +71,8 @@ int main(void)
 
 /// Interrupt Routine for STRG-C
 void signalHandler(int signum)
-{	
-	std::cout << std::endl <<  "Programm aborted: CTRL + C pressed" << std::endl;
+{
+	std::cout << std::endl << "Programm aborted: CTRL + C pressed" << std::endl;
 	// Beenden Sie hier bitte alle Verbindung zu den Sensoren etc.
 	bc.driveRelease();
 	exit(signum);

@@ -49,10 +49,10 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <Link>
-      <LibraryDependencies>wiringPi</LibraryDependencies>
+      <LibraryDependencies>wiringPi;stdc++fs;pthread</LibraryDependencies>
     </Link>
     <RemotePostBuildEvent>
-      <Command>g++ -Wall -o programm.exe main.cpp MotorhatDriver.cpp BuggyController.cpp UltraSonicDriver.cpp -lwiringPi</Command>
+      <Command>g++ -std=c++17 -Wall -o buggy.exe *.cpp -lwiringPi -lasound -lstdc++fs -pthread</Command>
       <Message>
       </Message>
     </RemotePostBuildEvent>
@@ -67,17 +67,23 @@
     </RemotePostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="BuggyController.cpp" />
     <ClCompile Include="UltraSonicDriver.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MotorhatDriver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="BuggyController.h" />
     <ClInclude Include="UltraSonicDriver.h" />
     <ClInclude Include="MotorhatDriver.h" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
