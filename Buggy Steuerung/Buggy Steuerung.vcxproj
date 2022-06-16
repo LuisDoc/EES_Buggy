@@ -69,6 +69,7 @@
   <ItemGroup>
     <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="BuggyController.cpp" />
+    <ClCompile Include="MPU6050.cpp" />
     <ClCompile Include="UltraSonicDriver.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MotorhatDriver.cpp" />
@@ -76,6 +77,7 @@
   <ItemGroup>
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="BuggyController.h" />
+    <ClInclude Include="MPU6050.h" />
     <ClInclude Include="UltraSonicDriver.h" />
     <ClInclude Include="MotorhatDriver.h" />
   </ItemGroup>

@@ -9,6 +9,7 @@
 #include "MotorhatDriver.h"
 #include "BuggyController.h"
 #include "UltraSonicDriver.h"
+#include "MPU6050.h"
 #include "AudioPlayer.h"
 
 /*
@@ -19,31 +20,9 @@ BuggyController bc;
 UltraSonicDriver us;
 AudioPlayer ap;
 
+
 //Stop Programm when STRG + C pressed
 void signalHandler(int signum);
-
-// Buggy fährt ein Rechteck ab
-void square(BuggyController bc) {
-	for (int i = 0; i < 16; i++) {
-		bc.driveForward(1000);
-		bc.turnRightFWD(970);
-	}
-
-}
-// Buggy fährt einen Slalom
-void slalom(BuggyController bc) {
-	bc.driveForward(1000);
-	bc.turnRightFWD(970);
-	bc.driveForward(500);
-	bc.turnLeftFWD(1300);
-	bc.driveForward(1000);
-	bc.turnRightFWD(970);
-	bc.driveForward(500);
-}
-// Ultraschallsensor Test Methode
-void testUltraschallSensor(UltraSonicDriver us) {
-	std::cout << "Abstand: " << us.measureDistance() << std::endl;
-}
 
 int main(void)
 {
@@ -52,17 +31,21 @@ int main(void)
 	//Notify Programm start on console
 	std::cout << "Programm started" << std::endl;
 
+	//Programm Code :: Start
 
-	do{
-		//Start Programm Code here
-		
-		bc.driveForward(3000);
-		delay(1000);
-		
-		//End Programm Code here
-	} while (0);
+	//Drive Square
+	for (int i = 0; i < 10; i++) {
+		bc.move(0, MOTOR_FORWARD, 2000);
+		bc.move(-90, MOTOR_FORWARD);
+	}
+	bc.move(0, MOTOR_BACK, 2000);
+	bc.move(-90, MOTOR_FORWARD);
+	bc.move(90, MOTOR_FORWARD);
+	bc.move(-90, MOTOR_BACK);
+	bc.move(90, MOTOR_BACK);
+	bc.move(0, MOTOR_FORWARD, 3000);
 
-	//Stop Buggy if programm is done
+	//Programm Code :: Stop
 	bc.driveRelease();
 	return EXIT_SUCCESS;
 }

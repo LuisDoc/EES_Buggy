@@ -1,30 +1,20 @@
 #include "BuggyController.h"
 
-//
-//
-//	Constructor
-//
-//
 
-//Basic Constructor
+/*
+* Basic Constructor will initialise all Variables and initialise all hardware devices and used Gpios
+* For safety, first Operation will check for possible Collisions with Objects 
+*/
 BuggyController::BuggyController() {
-	
-	//
-	//	Initialise Vars
-	//
+	//Initialise Values
 	collisionDetected = true; //Buggy should not drive without first Check
 	currentSpeed[2] = { 0 };
 	currentDirection[2] = {0};
-	
-	//
-	// Sensoren und Hardware Controller
-	// 
+	//Sensors and Hardware initialisiation
 	this->audioPlayer = new AudioPlayer;
 	this->UltraSonicSensor = new UltraSonicDriver(usTriggerPin, usEchoPin);
-
-	//
-	//	Configure M1 and M4
-	//
+	this->i2cMPU6050 = MPU6050::init();
+	//Configure M1 and M4
 	this->i2c = MotorhatDriver::init();
 	if (!i2c) {
 		system("echo I2C Device not initialized.");
@@ -32,29 +22,18 @@ BuggyController::BuggyController() {
 	}
 	MotorhatDriver::initMotor(this->i2c, M1);
 	MotorhatDriver::initMotor(this->i2c, M4);
-	
-	//
-	//	Configure GPIOS
-	//
+	//Configure GPIOS
 	pinMode(brakePin, OUTPUT);
-	
-	//
-	//	Method calls
-	//
+	//Start with Possible Collision Check
 	this->collisionCheck(); //Buggy needs to check, wether he can start driving or not before first drive command
 }
 
-//
-//
-//	Collision Detection
-//
-//
-
-//Method makes use of Ultra Sonic Sensor Driver to check for upcoming collisions
+/*
+* Check for Collision with UltraSonic Sensor
+* Method will set global flag and return boolean, so 'run' method can start with collision handling
+*/
 bool BuggyController::collisionCheck() {
-	//
-	//	Compare Distance to threshold, which is set by define || if there is no instance of Sensor, buggy should not be allowed to drive
-	//
+	//Compare Distance to Threshold | Disable drive when there is no instance uf Sensor
 	if (this->UltraSonicSensor->measureDistance() < collisionDistanceThreshold || !this->UltraSonicSensor) {
 		this->collisionDetected = true;
 		return true;
@@ -66,127 +45,145 @@ bool BuggyController::collisionCheck() {
 	
 }
 
-//Method handles Collision by simply waiting until collisionCheck returns false
+/*
+* Wait till collisionCheck returns false
+* Check frequently
+*/
 void BuggyController::collisionHandle() {
-	//
-	//	Busy wait until there is no more Collision
-	//
+	//activate Brake Light
+	digitalWrite(brakePin, HIGH);
+
+	//Busy wait till there is no more Collision
 	while (this->collisionCheck()) {
-		delay(ccperiod / 2);//Check for Collision 2* faster then usual
+		delay(collisionHandleDelay);
 	}
+	//deactivate Brake Light
+	digitalWrite(brakePin, LOW);
 }
 
-//Method plays Audio signal, when stopping because of collision
+/*
+* Method uses AudioPlayer to play a track/sound from 3.5mm Jack
+*/
 void BuggyController::collisionAudio(){
-	std::cout << "Collision Audio beginning" << std::endl;
-	audioPlayer->play();
-	std::cout << "Collision Audio done " << std::endl;
+	//audioPlayer->play();
 }
 
-//
-//
-//	Control Buggy Movement
-//
-//
-
-//Private Method that actualy changes driving parameters
-void BuggyController::drive(int speedLeft, int speedRight, int directionLeft, int directionRight) {
-	//
-	//	Save new Speed and Direction Configurations in Case Buggy needs to stop, because of Ultra Sonic Sensor alert
-	//
+/*
+* Changes drive parameters for speed and driving direction
+* new settings will be saved in two arrays, so the buggy can use those values, to get back running, after a collision warning stopped it.
+*/
+void BuggyController::driveConfig(int speedLeft, int speedRight, int directionLeft, int directionRight) {
+	//Backup speed and direction values
 	currentSpeed[0] = speedLeft;
 	currentSpeed[1] = speedRight;
 	currentDirection[0] = directionLeft;
 	currentDirection[1] = directionRight;
-
-	
-	if (!this->UltraSonicSensor) //Without an instance of the sensor, buggy should not be allowed to drive
+	//Without an instance of the sensor, buggy should not be allowed to drive
+	if (!this->UltraSonicSensor) 
 		return;
-	
-	//
-	//	Configure Speed and Direction of M1 and M4
-	//
+	//Configure speed and direction registers
 	MotorhatDriver::setSpeed(i2c, M1, speedLeft);
 	MotorhatDriver::setSpeed(i2c, M4, speedRight);
 	MotorhatDriver::runMotor(i2c, M1, directionLeft);
 	MotorhatDriver::runMotor(i2c, M4, directionRight);
 }
 
-//Delay which includes cyclic collision checks
-void BuggyController::driveDelay(int milli) {
-	//
-	//	Calculate Intervals in which Collision Check has to be done
-	//
-	int n_perioden = milli / ccperiod;
-	int periode = 0;
-	while (periode++ < n_perioden) {
-		//
-		//	When Collision Detected stop buggy and wait, until object disappeared from sensors
-		//
+/*
+* Method will run Buggy for a given duration of time
+* Buggy will aim to reach given angle_goal
+*/
+void BuggyController::run(int angle_goal, int millis) {
+	
+	int drive_till = micros() + millis * 1000;
+	
+	while (micros() < drive_till) {
+		//Collision Detection
 		if (this->collisionCheck()) {
-			//
-			//	Stop the buggy and activate Brake Light
-			//
-			this->driveRelease(); //Stop Buggy
-			digitalWrite(brakePin, HIGH); //Activate Brake Light
-			
-			//
-			//	Run threads for handling and audio signals
-			//
+			//Stop Buggy
+			this->driveRelease();
+			//Run Threads for Collision Handle and Audio Player - Wait for Threads to finish
 			std::thread cHandle(&BuggyController::collisionHandle, this);
 			std::thread cAudio (&BuggyController::collisionAudio, this);
 			cHandle.join();
-			cAudio.join();
-			//
-			//	Resume Drive and deactivate Brake Light
-			//
-			digitalWrite(brakePin, LOW);
 			std::cout << "Collision Handle done " << std::endl;
-			this->drive(currentSpeed[0], currentSpeed[1], currentDirection[0], currentDirection[1]);
+			cAudio.join();
+			std::cout << "AudioPlayer done" << std::endl;
+			//Resume Drive
+			this->driveConfig(currentSpeed[0], currentSpeed[1], currentDirection[0], currentDirection[1]);
 		}
-		//Wait for collisionCheckPeriode milliseconds
-		delay(ccperiod);
+		//Deviation Check 
+		correctDrive(angle_goal);
+
+		//Wait for collisionCheckPeriode Microseconds
+		delayMicroseconds(microDelay);
+	}
+}
+/*
+* Method will run Buggy until given angle_goal is reached
+*/
+void BuggyController::run(int angle_goal) {
+
+	MPU6050::getMotions(i2cMPU6050); //Calculate current Z angle
+	int current = MPU6050::angle_z; //Get Current Z angle
+	
+	//While Angle goal is not equal to current angle --> Run
+	while (current > (angle_goal + AngleThreshold) || current < (angle_goal - AngleThreshold)) {
+		//Read Position from Last update
+		current = MPU6050::angle_z;
+		//Collision Detection
+		if (this->collisionCheck()) {
+			//Stop Buggy
+			this->driveRelease();
+			//Run Threads for Collision Handle and Audio Player - Wait for Threads to finish
+			std::thread cHandle(&BuggyController::collisionHandle, this);
+			std::thread cAudio(&BuggyController::collisionAudio, this);
+			cHandle.join();
+			std::cout << "Collision Handle done " << std::endl;
+			cAudio.join();
+			std::cout << "AudioPlayer done" << std::endl;
+			//Resume Drive
+			this->driveConfig(currentSpeed[0], currentSpeed[1], currentDirection[0], currentDirection[1]);
+		}
+		//Deviation Check 
+		correctDrive(angle_goal);
 	}
 
 }
 
-//Public methods that can be called by user, which determined values for drive method
-void BuggyController::turnLeftFWD(int milli) {
-	std::cout << "Left Turn: " << milli << " milliseconds" << std::endl;
-	//
-	//	Turn Left for milli x milliseconds, then stop the buggy
-	//
-	drive(50, 127, MOTOR_FORWARD, MOTOR_FORWARD);
-	driveDelay(milli);
-	driveRelease();
+/*
+* Method will check if Buggy is still on course to reach angle_goal.
+* Deviations will cause change in speed parameters
+*/
+void BuggyController::correctDrive(int angle_goal) {
+	MPU6050::getMotions(i2cMPU6050);
+	double angle = MPU6050::angle_z; //Current Degree
+	std::cout << angle << " ==> " << angle_goal << std::endl;
+	double deltaAngle = angle_goal - angle;
+
+	//TODO: Verschiedene Motoren einstellungen für versch. Winkel
+
+	//Deviation from Threshold
+	if (deltaAngle > AngleThreshold) {
+		//Korrektur nach Links
+		if(currentDirection[0] == MOTOR_FORWARD)
+			driveConfig(75, 150, currentDirection[0], currentDirection[1]);
+		else
+			driveConfig(150, 75, currentDirection[0], currentDirection[1]);
+		
+	}
+	else if(deltaAngle < (AngleThreshold *(-1))) {
+		//Korrektur nach rechts
+		//Korrektur nach Links
+		if (currentDirection[0] == MOTOR_FORWARD)
+			driveConfig(150, 75, currentDirection[0], currentDirection[1]);
+		else
+			driveConfig(75, 150, currentDirection[0], currentDirection[1]);
+	}
 }
-void BuggyController::turnRightFWD(int milli) {
-	std::cout << "Right Turn: " << milli << " milliseconds" << std::endl;
-	//
-	//	Turn Right for milli x milliseconds, then stop the buggy
-	//
-	drive(127, 50, MOTOR_FORWARD, MOTOR_FORWARD);
-	driveDelay(milli);
-	driveRelease();
-}
-void BuggyController::driveForward(int milli) {
-	std::cout << "Forwarddrive: " << milli << " milliseconds" << std::endl;
-	//
-	//	Drive Reverse for milli x milliseconds, then stop the buggy
-	//
-	drive(110, 127, MOTOR_FORWARD, MOTOR_FORWARD);
-	driveDelay(milli);
-	driveRelease();
-}
-void BuggyController::driveReverse(int milli) {
-	std::cout << "Reversedrive: " << milli << " milliseconds" << std::endl;
-	//
-	//	Drive Reverse for milli x milliseconds, then stop the buggy
-	//
-	drive(110, 127, MOTOR_BACK, MOTOR_BACK);
-	driveDelay(milli);
-	driveRelease();
-}
+
+/*
+* Method stops buggy
+*/
 void BuggyController::driveRelease() {
 	//Configure Speed Settings
 	MotorhatDriver::setSpeed(i2c, M1, 0);
@@ -194,4 +191,28 @@ void BuggyController::driveRelease() {
 	//Configure Direction Settings
 	MotorhatDriver::runMotor(i2c, M1, MOTOR_RELEASE);
 	MotorhatDriver::runMotor(i2c, M4, MOTOR_RELEASE);
+}
+
+/*
+* Move Buggy in given direction for specific period of time
+*/
+void BuggyController::move(int angle, int direction, int duration) {
+	std::cout << "Drive " << angle << "° until " << duration << " milliseconds" << std::endl;
+	
+	int angle_goal = MPU6050::angle_z + angle;
+	driveConfig(150, 150, direction, direction);
+	run(angle_goal, duration);
+	driveRelease();
+}
+
+/*
+* Move Buggy in given direction until angle is reached
+*/
+void BuggyController::move(int angle, int direction) {
+	std::cout << "Drive until " << angle << "° reached" << std::endl;
+	
+	int angle_goal = MPU6050::angle_z + angle;
+	driveConfig(150, 150, direction, direction);
+	run(angle_goal);
+	driveRelease();
 }
