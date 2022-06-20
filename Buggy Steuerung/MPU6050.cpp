@@ -74,8 +74,8 @@ int* MPU6050::getMotions(int i2c) {
 	int16_t x_m = 0, y_m = 0, z_m = 0;
 	//Daten auslesen mit I2C vom Register MPU6050_RA_ACCEL_XOUT_H ==> X Werte
 	// X-Achse
-	signed int x_h = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_XOUT_H);
-	signed int x_l = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_XOUT_L);
+	int x_h = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_XOUT_H);
+	int x_l = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_XOUT_L);
 	x_m = (x_h << 8 | x_l) - MPU6050::x_off;
 	// Y-Achse
 	int y_h = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_YOUT_H);

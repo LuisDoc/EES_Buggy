@@ -10,10 +10,9 @@
 */
 
 namespace MPU6050 {
+	
 	#define INT_MIN -32768
 	#define INT_MAX 32767
-
-
 	//I2C Address
 	#define MPU6050_I2CAdress			0x68
 	//Configure Register
