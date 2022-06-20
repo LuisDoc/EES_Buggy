@@ -34,16 +34,11 @@ int main(void)
 	//Programm Code :: Start
 
 	//Drive Square
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 16; i++) {
 		bc.move(0, MOTOR_FORWARD, 2000);
 		bc.move(-90, MOTOR_FORWARD);
 	}
-	bc.move(0, MOTOR_BACK, 2000);
-	bc.move(-90, MOTOR_FORWARD);
-	bc.move(90, MOTOR_FORWARD);
-	bc.move(-90, MOTOR_BACK);
-	bc.move(90, MOTOR_BACK);
-	bc.move(0, MOTOR_FORWARD, 3000);
+	
 
 	//Programm Code :: Stop
 	bc.driveRelease();

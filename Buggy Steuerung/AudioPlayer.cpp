@@ -22,7 +22,7 @@ void AudioPlayer::playNiluBots() {
 	//Generate random number
 	int ran = (std::rand() % audio_list.size());
 	//Play Audio to Jack
-	std::string command = "mpg321 -g 100 " + audio_list[ran];
+	std::string command = "mpg321 -g 100 " + audio_list[ran]; //PLay random audio file
 	std::cout << "Max: " << audio_list.size() << " und random number: " << ran << std::endl;
 	system(command.c_str());
 }

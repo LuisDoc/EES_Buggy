@@ -6,7 +6,9 @@
 #include <thread>
 #include <future>
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>
+#include <experimental/filesystem>
 
 /*
 *	Pin-Defines
@@ -50,6 +52,7 @@ private:
 	bool collisionDetected; //Buggy not allowed to drive, if value is true
 	int currentSpeed[2]; //Backup current Speed Settings
 	int currentDirection[2]; //Backup current Drive-Direction Settings
+	std::string logfile_name = "correction_log.txt";
 	//
 	//	sensors & hardware controller
 	//

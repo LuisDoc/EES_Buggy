@@ -14,16 +14,14 @@ double MPU6050::angle_y;
 double MPU6050::angle_z;
 
 
-//Initialise Methode
-
-//Setter und Getter für Offsets
-
-//Get Motions Methode
-
+//Initialise MPU6050 for Gyroscope Usage
 int MPU6050::init() {
 	
+	//Initialise Variables
+
 	MPU6050::currentTime = micros();
 	MPU6050::previousTime = currentTime;
+	MPU6050::gyroPrecision = 0; 
 
 	MPU6050::angle_x = 0;
 	MPU6050::angle_y = 0;
@@ -38,8 +36,9 @@ int MPU6050::init() {
 	//Clock Source
 	MPU6050::setClockSource(i2c, MPU6050_CLOCK_PLL_XGYRO);
 	//FullScale Gyro Range
-	MPU6050::setGyroRange(i2c, MPU6050_GYRO_FS_250);
 	MPU6050::gyroPrecision = MPU6050_GYRO_FS_250;
+	MPU6050::setGyroRange(i2c, MPU6050::gyroPrecision);
+	
 	//Set Sleep Enabled auf false
 	MPU6050::setSleepBit(i2c, false);
 	//Calibrate Offsets
@@ -53,13 +52,16 @@ int MPU6050::init() {
 //	Data Read Methods
 //
 
-//Get 
-void MPU6050::getMotions(int i2c) {
+//Calculate current Angles -> Save in global Variables and Return in Array
+int* MPU6050::getMotions(int i2c) {
 	
+	int result[3] = { 0 };
+
 	MPU6050::previousTime = MPU6050::currentTime;
 	MPU6050::currentTime = micros(); //Aktuelle Zeit in Mikrosekunden
 	double elapsedTime = 0;
-
+	
+	//Determine which lsb_sensitivity is needed
 	double lsb_sensitivity = 1;
 	switch (gyroPrecision) {
 	case MPU6050_GYRO_FS_250: lsb_sensitivity = 131.0;  break;
@@ -86,11 +88,22 @@ void MPU6050::getMotions(int i2c) {
 
 	elapsedTime = (double)((double)MPU6050::currentTime - (double)MPU6050::previousTime) / 1000000;
 
+	//Calculate Angles and Save in global variables
 	MPU6050::angle_x = MPU6050::angle_x + ((x_m / lsb_sensitivity)) * elapsedTime;
 	MPU6050::angle_y = MPU6050::angle_y + ((y_m / lsb_sensitivity)) * elapsedTime;
 	MPU6050::angle_z = MPU6050::angle_z + ((z_m / lsb_sensitivity)) * elapsedTime;
+	//Return Angles in Array
+	result[0] = MPU6050::angle_x;
+	result[1] = MPU6050::angle_y;
+	result[2] = MPU6050::angle_z;
+	return result;
 }
 
+//
+//	Configuration Methods
+// 
+
+//Configure Clock
 void MPU6050::setClockSource(int i2c, uint8_t source) {
 	//Aktuellen Registerwert lesen
 	int oldmode = wiringPiI2CReadReg8(i2c, MPU6050_RA_PWR_MGMT_1);
@@ -102,14 +115,10 @@ void MPU6050::setClockSource(int i2c, uint8_t source) {
 	wiringPiI2CWriteReg8(i2c, MPU6050_RA_PWR_MGMT_1, newmode);
 }
 
-//
-//	Configuration Methods
-// 
-
 //Configure Offets
 void MPU6050::calibrateOffsets(int i2c) {
 	int n = 40;
-	//Calculate best offset values 
+	//Calculate best offset values
 	int x_sum = 0, y_sum = 0, z_sum = 0;
 	int16_t x_val = 0, y_val = 0, z_val = 0;
 	for (int i = 0; i < n; i++) {
@@ -150,19 +159,6 @@ void MPU6050::setGyroRange(int i2c, uint8_t range){
 	newmode |= range << 3;
 	//Write to register
 	wiringPiI2CWriteReg8(i2c, MPU6050_RA_GYRO_CONFIG, newmode);
-}
-
-//Acceleration Precision Range
-void MPU6050::setAccelRange(int i2c, uint8_t range){
-	//Read Current Settings
-	int oldmode = wiringPiI2CReadReg8(i2c, MPU6050_RA_ACCEL_CONFIG);
-	int newmode = oldmode;
-	//Changes only on Bit 4 and 3
-	newmode &= ~(11000); //Reset Bits
-	//Set new FS Configuration
-	newmode |= range << 3;
-	//Write to register
-	wiringPiI2CWriteReg8(i2c, MPU6050_RA_ACCEL_CONFIG, newmode);
 }
 
 //Activate or Deactivate Sleep mode

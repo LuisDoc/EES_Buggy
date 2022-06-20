@@ -157,27 +157,43 @@ void BuggyController::run(int angle_goal) {
 void BuggyController::correctDrive(int angle_goal) {
 	MPU6050::getMotions(i2cMPU6050);
 	double angle = MPU6050::angle_z; //Current Degree
-	std::cout << angle << " ==> " << angle_goal << std::endl;
 	double deltaAngle = angle_goal - angle;
 
-	//TODO: Verschiedene Motoren einstellungen für versch. Winkel
+	//Calculate random values for Engine Settings ==> Generate Log-Data for KI
+	int slow = 75 + (std::rand() % (125 - 75 + 1));
+	int fast = 125 + (std::rand() % (175 - 125 + 1));
+
+	 //Save Base_path in variable
+	std::string path = (std::experimental::filesystem::current_path().u8string());
+	//Open File
+	std::fstream log("log.txt", std::fstream::app);
+	//Goal Angle | Current Angle | Current Speed L | Current Speed R | Next Speed L | Next Speed Right 
+	if (log) {
+		//Write new Row with new Data except result angle, which will be added in next iteration
+		log << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow << ", " << fast <<"\n";
+		std::cout << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow << ", " << fast << "\n";
+	}
+	else {
+		std::cout << "Logfile cannot be opend" << std::endl;
+	}
+	log.close();
+	
 
 	//Deviation from Threshold
 	if (deltaAngle > AngleThreshold) {
 		//Korrektur nach Links
 		if(currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(75, 150, currentDirection[0], currentDirection[1]);
+			driveConfig(slow, fast, currentDirection[0], currentDirection[1]);
 		else
-			driveConfig(150, 75, currentDirection[0], currentDirection[1]);
+			driveConfig(fast, slow, currentDirection[0], currentDirection[1]);
 		
 	}
 	else if(deltaAngle < (AngleThreshold *(-1))) {
-		//Korrektur nach rechts
-		//Korrektur nach Links
+		//Korrektur nach Rechts
 		if (currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(150, 75, currentDirection[0], currentDirection[1]);
+			driveConfig(fast, slow, currentDirection[0], currentDirection[1]);
 		else
-			driveConfig(75, 150, currentDirection[0], currentDirection[1]);
+			driveConfig(slow, fast, currentDirection[0], currentDirection[1]);
 	}
 }
 
