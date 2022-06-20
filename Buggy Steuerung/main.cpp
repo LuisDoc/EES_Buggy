@@ -33,7 +33,7 @@ int main(void)
 
 	//Programm Code :: Start
 
-	bc.fun(10000);
+	//bc.fun(10000);
 
 	//Drive Square
 	for (int i = 0; i < 16; i++) {

@@ -40,6 +40,6 @@ double UltraSonicDriver::measureDistance() {
 	while (digitalRead(this->echo) == 1) {
 		pulse_end = micros(); //Aktuelle Zeit in Mikrosekunden
 	}
-	
+	//17150 = 1/2 Schallgeschwindigkeit in cm/s
 	return ((pulse_end / 1000000) - (pulse_start / 1000000)) * 17150;
 }

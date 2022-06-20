@@ -159,6 +159,8 @@ void BuggyController::correctDrive(int angle_goal) {
 	MPU6050::getMotions(i2cMPU6050);
 	double angle = MPU6050::angle_z; //Current Degree
 	double deltaAngle = angle_goal - angle;
+	
+	std::cout << "Current Angle: " << angle << "\t Goal: " << angle_goal << std::endl;
 
 	 //Save Base_path in variable
 	std::string path = (std::experimental::filesystem::current_path().u8string());
@@ -209,7 +211,7 @@ void BuggyController::driveRelease() {
 * Move Buggy in given direction for specific period of time
 */
 void BuggyController::move(int angle, int direction, int duration) {
-	std::cout << "Drive " << angle << "° until " << duration << " milliseconds" << std::endl;
+	std::cout << "Drive " << angle << " Degree until " << duration << " milliseconds" << std::endl;
 	
 	int angle_goal = MPU6050::angle_z + angle;
 	driveConfig(150, 150, direction, direction);
@@ -221,7 +223,7 @@ void BuggyController::move(int angle, int direction, int duration) {
 * Move Buggy in given direction until angle is reached
 */
 void BuggyController::move(int angle, int direction) {
-	std::cout << "Drive until " << angle << "° reached" << std::endl;
+	std::cout << "Drive until " << angle << "Degree reached" << std::endl;
 	
 	int angle_goal = MPU6050::angle_z + angle;
 	driveConfig(150, 150, direction, direction);
@@ -233,7 +235,7 @@ void BuggyController::move(int angle, int direction) {
 * Fun Mode
 */
 void BuggyController::fun(int duration) {
-	driveConfig(150, 150, MOTOR_FORWARD, MOTOR_BACK);
-	run(-30000,duration);
+	driveConfig(100, 100, MOTOR_FORWARD, MOTOR_BACK);
+	run(-720);
 	driveRelease();
 }

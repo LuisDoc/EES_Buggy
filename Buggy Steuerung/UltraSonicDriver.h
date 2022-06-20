@@ -23,7 +23,6 @@ public:
 	UltraSonicDriver() :trigger{ triggerwPi }, echo{ echowPi }{configPins(); }
 	//Konstruktor mit variablen Pins
 	UltraSonicDriver(int triggerBCMPin, int echoBCMPin) : trigger{ triggerBCMPin }, echo{ echoBCMPin }{configPins(); }
-
 	/*
 	* Methoden
 	*/
