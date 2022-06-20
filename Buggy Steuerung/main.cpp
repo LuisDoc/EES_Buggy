@@ -33,6 +33,8 @@ int main(void)
 
 	//Programm Code :: Start
 
+	bc.fun(10000);
+
 	//Drive Square
 	for (int i = 0; i < 16; i++) {
 		bc.move(0, MOTOR_FORWARD, 2000);
@@ -53,5 +55,6 @@ void signalHandler(int signum)
 	std::cout << std::endl << "Programm aborted: CTRL + C pressed" << std::endl;
 	// Beenden Sie hier bitte alle Verbindung zu den Sensoren etc.
 	bc.driveRelease();
+	digitalWrite(brakePin, LOW);
 	exit(signum);
 }

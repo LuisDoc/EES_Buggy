@@ -80,7 +80,7 @@ public:
 	//
 	void move(int angle, int direction, int duration); //Move until time goal reached
 	void move(int angle, int direction); //Move until angle reached
-
+	void fun(int direction);
 	void driveRelease();
 };
 

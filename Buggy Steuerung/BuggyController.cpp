@@ -35,6 +35,7 @@ BuggyController::BuggyController() {
 bool BuggyController::collisionCheck() {
 	//Compare Distance to Threshold | Disable drive when there is no instance uf Sensor
 	if (this->UltraSonicSensor->measureDistance() < collisionDistanceThreshold || !this->UltraSonicSensor) {
+		std::cout << "!!! Possible Collision Detected !!!\n";
 		this->collisionDetected = true;
 		return true;
 	}
@@ -159,10 +160,6 @@ void BuggyController::correctDrive(int angle_goal) {
 	double angle = MPU6050::angle_z; //Current Degree
 	double deltaAngle = angle_goal - angle;
 
-	//Calculate random values for Engine Settings ==> Generate Log-Data for KI
-	int slow = 75 + (std::rand() % (125 - 75 + 1));
-	int fast = 125 + (std::rand() % (175 - 125 + 1));
-
 	 //Save Base_path in variable
 	std::string path = (std::experimental::filesystem::current_path().u8string());
 	//Open File
@@ -229,5 +226,14 @@ void BuggyController::move(int angle, int direction) {
 	int angle_goal = MPU6050::angle_z + angle;
 	driveConfig(150, 150, direction, direction);
 	run(angle_goal);
+	driveRelease();
+}
+
+/*
+* Fun Mode
+*/
+void BuggyController::fun(int duration) {
+	driveConfig(150, 150, MOTOR_FORWARD, MOTOR_BACK);
+	run(-30000,duration);
 	driveRelease();
 }

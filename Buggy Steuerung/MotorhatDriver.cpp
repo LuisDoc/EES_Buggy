@@ -1,17 +1,20 @@
 #include "MotorhatDriver.h"
 
+//Write to Register for all Engines
 void MotorhatDriver::setAllPWM(int i2c, int on, int off) {
-    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_ON_L, on & 0xFF);
-    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_ON_H, on >> 8);
-    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_OFF_L, off & 0xFF);
-    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_OFF_H, off >> 8);
+    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_ON_L, on & 0xFF); //Write Low Bits from variable on to register on
+    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_ON_H, on >> 8); //Write High Bits from variable on to register on
+    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_OFF_L, off & 0xFF); //Write High Bits from variable off to register off
+    wiringPiI2CWriteReg8(i2c, PWM_ALL_LED_OFF_H, off >> 8); //Write High Bits from variable off to register off
 }
+//Write to Register for specific Engine
 void MotorhatDriver::setPWM(int i2c, int pin, int on, int off) {
-    wiringPiI2CWriteReg8(i2c, PWM_LED0_ON_L + 4 * pin, on & 0xFF);
-    wiringPiI2CWriteReg8(i2c, PWM_LED0_ON_H + 4 * pin, on >> 8);
+    wiringPiI2CWriteReg8(i2c, PWM_LED0_ON_L + 4 * pin, on & 0xFF); //Write Low bits of variable on to pin position
+    wiringPiI2CWriteReg8(i2c, PWM_LED0_ON_H + 4 * pin, on >> 8); // "" High "" 
     wiringPiI2CWriteReg8(i2c, PWM_LED0_OFF_L + 4 * pin, off & 0xFF);
     wiringPiI2CWriteReg8(i2c, PWM_LED0_OFF_H + 4 * pin, off >> 8);
 }
+//Write Value to Pin ==> Function will be used for choosing Driving Direction in runMotor
 void MotorhatDriver::setPin(int i2c, int pin, int value) {
     //Ungültiger Pin übergeben
     if (pin < 0 || pin > 15) {
@@ -33,9 +36,10 @@ void MotorhatDriver::setPin(int i2c, int pin, int value) {
         return;
     }
 }
+//Set Rotating Direction
 void MotorhatDriver::runMotor(int i2c, int motor, int command) {
     int in1, in2;
-
+    //Choose which Motor to run by given parameter and set in1 and in2 variable
     switch (motor) {
     case 1:
         in1 = PWM_M1_IN1;
@@ -57,11 +61,11 @@ void MotorhatDriver::runMotor(int i2c, int motor, int command) {
         system("echo Invalid motor number.");
         return;
     }
-
+    //Set Value to Pin, depending on given command
     switch (command) {
     case MOTOR_FORWARD:
-        setPin(i2c, in2, 0);
         setPin(i2c, in1, 1);
+        setPin(i2c, in2, 0);
         break;
     case MOTOR_BACK:
         setPin(i2c, in1, 0);
@@ -76,13 +80,16 @@ void MotorhatDriver::runMotor(int i2c, int motor, int command) {
         return;
     }
 }
+//Set Speed of Engine
 void MotorhatDriver::setSpeed(int i2c, int motor, int speed) {
+    
     if (speed < 0 || speed > 255) {
         system("echo Speed must be between 0 and 255 inclusive.  Received.");
         return;
     }
 
     int pwm;
+    //Choose which Motor to configure by given parameter
     switch (motor) {
     case 1:
         pwm = PWM_M1_PWM;
@@ -100,9 +107,12 @@ void MotorhatDriver::setSpeed(int i2c, int motor, int speed) {
         system("echo Unsupported motor.");
         break;
     }
-    setPWM(i2c, pwm, 0, speed * 16);
-}
+    //Set PWM Motor Speed
+    setPWM(i2c, pwm, 0, speed * 16); 
+    //Max Speed value is 4080, with limiting speed between 0 and 255, we get a better grading in speed settings
 
+}
+//Setup whole Driver
 int MotorhatDriver::init() {
     //Setup I2C - i2c == fd
     int i2c = wiringPiI2CSetup(ADAFRUIT_MOTORHAT);
@@ -128,11 +138,8 @@ int MotorhatDriver::init() {
 
     return i2c;
 }
+//Setup Motor
 void MotorhatDriver::initMotor(int i2c, int motor) {
     runMotor(i2c, motor, MOTOR_RELEASE);
     setSpeed(i2c, motor, 100);
-    /*
-    runMotor(i2c, motor, MOTOR_FORWARD);
-    runMotor(i2c, motor, MOTOR_RELEASE);
-    */
 }

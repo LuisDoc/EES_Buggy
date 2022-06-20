@@ -7,6 +7,7 @@
 namespace MotorhatDriver {
 	#define ADAFRUIT_MOTORHAT       0x60
 
+	//PINS
 	#define PWM_M1_PWM      8
 	#define PWM_M1_IN2      9
 	#define PWM_M1_IN1      10
@@ -50,11 +51,11 @@ namespace MotorhatDriver {
 		Funktionen
 	*/
 
-	void setAllPWM(int i2c, int on, int off);
-	void setPWM(int i2c, int pin, int on, int off);
-	void setPin(int i2c, int pin, int value);
-	void runMotor(int i2c, int motor, int command);
-	void setSpeed(int i2c, int motor, int speed);
-	int init();
-	void initMotor(int i2c, int motor);
+	void setAllPWM(int i2c, int on, int off); //Write value son and off to registers for all pins
+	void setPWM(int i2c, int pin, int on, int off); //Write values on and off to registers for specific pin
+	void setPin(int i2c, int pin, int value); //Set Value to Pin ==> Used for Direction Pick
+	void runMotor(int i2c, int motor, int command);  //Pick Motor direction (forwards/backwards/release)
+	void setSpeed(int i2c, int motor, int speed); //Set Motor speed
+	int init(); //Init Driver
+	void initMotor(int i2c, int motor); //Init Motor
 }

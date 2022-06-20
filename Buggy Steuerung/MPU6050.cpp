@@ -136,7 +136,7 @@ void MPU6050::calibrateOffsets(int i2c) {
 		int z_h = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_ZOUT_H);
 		int z_l = wiringPiI2CReadReg8(i2c, MPU6050_RA_GYRO_ZOUT_L);
 		z_m = (z_h << 8 | z_l);
-
+		//int16_t Variablen werden benötigt für korrekte Berechnung von signed Ergebnissen
 		x_sum += x_m;
 		y_sum += y_m;
 		z_sum += z_m;
@@ -171,3 +171,4 @@ void MPU6050::setSleepBit(int i2c, bool enabled){
 	//If enable, then set sleep bit 1, else set sleep bit 0
 	enabled ? newmode |= (1 << 6) : newmode &= ~(1 << 6);
 }
+
