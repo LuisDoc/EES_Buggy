@@ -170,8 +170,7 @@ void BuggyController::correctDrive(int angle_goal) {
 	//Goal Angle | Current Angle | Current Speed L | Current Speed R | Next Speed L | Next Speed Right 
 	if (log) {
 		//Write new Row with new Data except result angle, which will be added in next iteration
-		log << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow << ", " << fast <<"\n";
-		std::cout << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow << ", " << fast << "\n";
+		log << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow_drive << ", " << fast_drive <<"\n";
 	}
 	else {
 		std::cout << "Logfile cannot be opend" << std::endl;
@@ -183,17 +182,17 @@ void BuggyController::correctDrive(int angle_goal) {
 	if (deltaAngle > AngleThreshold) {
 		//Korrektur nach Links
 		if(currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(slow, fast, currentDirection[0], currentDirection[1]);
+			driveConfig(slow_drive, fast_drive, currentDirection[0], currentDirection[1]);
 		else
-			driveConfig(fast, slow, currentDirection[0], currentDirection[1]);
+			driveConfig(fast_drive, slow_drive, currentDirection[0], currentDirection[1]);
 		
 	}
 	else if(deltaAngle < (AngleThreshold *(-1))) {
 		//Korrektur nach Rechts
 		if (currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(fast, slow, currentDirection[0], currentDirection[1]);
+			driveConfig(fast_drive, slow_drive, currentDirection[0], currentDirection[1]);
 		else
-			driveConfig(slow, fast, currentDirection[0], currentDirection[1]);
+			driveConfig(slow_drive, fast_drive, currentDirection[0], currentDirection[1]);
 	}
 }
 

@@ -17,17 +17,18 @@
 #define usEchoPin 23 //BCM Pin 16
 #define brakePin 22 //BCM Pin 6
 
-#define M1 1
+#define M1 1 //Motor Left
 #define M2 2
 #define M3 3
-#define M4 4
+#define M4 4 //Motor Right
 
 #define MOTOR_FORWARD   1
 #define MOTOR_BACK      2
 #define MOTOR_BRAKE     3
 #define MOTOR_RELEASE   4
 
-
+#define slow_drive		125 //Wheel Speed for Slow Movements
+#define fast_drive		175 //Wheel Speed for Fast Movements
 
 /*
 * Configurate via Defines
@@ -54,7 +55,7 @@ private:
 	int currentDirection[2]; //Backup current Drive-Direction Settings
 	std::string logfile_name = "correction_log.txt";
 	//
-	//	sensors & hardware controller
+	//	Sensor & Hardware & Software Controller/Driver
 	//
 	UltraSonicDriver* UltraSonicSensor;
 	AudioPlayer* audioPlayer;
