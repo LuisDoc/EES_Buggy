@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <experimental/filesystem>
 
 /*
@@ -27,8 +28,9 @@
 #define MOTOR_BRAKE     3
 #define MOTOR_RELEASE   4
 
-#define slow_drive		125 //Wheel Speed for Slow Movements
-#define fast_drive		175 //Wheel Speed for Fast Movements
+#define default_speed	125
+#define driveMax		175
+#define driveMin		75
 
 /*
 * Configurate via Defines
@@ -53,6 +55,7 @@ private:
 	bool collisionDetected; //Buggy not allowed to drive, if value is true
 	int currentSpeed[2]; //Backup current Speed Settings
 	int currentDirection[2]; //Backup current Drive-Direction Settings
+	int previous_goal_angle;
 	std::string logfile_name = "correction_log.txt";
 	//
 	//	Sensor & Hardware & Software Controller/Driver
@@ -66,6 +69,7 @@ private:
 	void run(int angle_goal, int micros); //Run's the buggy until time_goal is reached in angle_goal's direction
 	void run(int angle_goal); //Run's the buggy until angle_goal is reached
 	void correctDrive(int angle_goal);
+	void calculateSpeeds(int& slow, int& fast, int delta_angle);
 	bool collisionCheck(); //When called, buggy will check for collision
 	void collisionHandle(); //Busy wait until there is no more collision
 	void collisionAudio(); //Method plays Audio Signal
@@ -82,5 +86,6 @@ public:
 	void move(int angle, int direction); //Move until angle reached
 	void fun(int direction);
 	void driveRelease();
+	void TerminalControl();
 };
 

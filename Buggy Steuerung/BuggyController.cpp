@@ -10,6 +10,7 @@ BuggyController::BuggyController() {
 	collisionDetected = true; //Buggy should not drive without first Check
 	currentSpeed[2] = { 0 };
 	currentDirection[2] = {0};
+	previous_goal_angle = 0;
 	//Sensors and Hardware initialisiation
 	this->audioPlayer = new AudioPlayer;
 	this->UltraSonicSensor = new UltraSonicDriver(usTriggerPin, usEchoPin);
@@ -160,38 +161,89 @@ void BuggyController::correctDrive(int angle_goal) {
 	double angle = MPU6050::angle_z; //Current Degree
 	double deltaAngle = angle_goal - angle;
 	
-	std::cout << "Current Angle: " << angle << "\t Goal: " << angle_goal << std::endl;
+	
+	
+	//Save Current Drive Speeds
+	int left_speed = currentSpeed[0];
+	int right_speed = currentSpeed[1];
+	int backup_left = left_speed;
+	int backup_right = right_speed;
 
-	 //Save Base_path in variable
-	std::string path = (std::experimental::filesystem::current_path().u8string());
+	//Check if Course Correction is needed
+	if (deltaAngle > AngleThreshold || deltaAngle < (AngleThreshold * (-1))) {
+		//Calculate new Speeds for Left and Right
+		calculateSpeeds(left_speed, right_speed, deltaAngle);
+	}
+	else {
+		//Reset Values
+		left_speed = default_speed;
+		right_speed = default_speed;
+	}
+	//Adjust Drive Parameters
+	driveConfig(left_speed, right_speed, currentDirection[0], currentDirection[1]);
+		
+	/*
+	* Write to Logfile and console
+	*/
+	
+	std::cout << "Left: " << left_speed << " Right: " << right_speed << " ||| ";
+	std::cout << "Current Angle: " << angle << "=> Goal: " << angle_goal << std::endl;
+
 	//Open File
 	std::fstream log("log.txt", std::fstream::app);
 	//Goal Angle | Current Angle | Current Speed L | Current Speed R | Next Speed L | Next Speed Right 
 	if (log) {
 		//Write new Row with new Data except result angle, which will be added in next iteration
-		log << angle_goal << ", " << angle << ", " << currentSpeed[0] << ", " << currentSpeed[1] << ", " << slow_drive << ", " << fast_drive <<"\n";
+		log << angle_goal << ", " << angle << ", " << backup_left << ", " << backup_right << ", " << left_speed << ", " << right_speed << "\n";
 	}
 	else {
 		std::cout << "Logfile cannot be opend" << std::endl;
 	}
 	log.close();
-	
+}
 
-	//Deviation from Threshold
-	if (deltaAngle > AngleThreshold) {
-		//Korrektur nach Links
-		if(currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(slow_drive, fast_drive, currentDirection[0], currentDirection[1]);
-		else
-			driveConfig(fast_drive, slow_drive, currentDirection[0], currentDirection[1]);
-		
+/*
+* Method calculates drive Speeds for the slower and the faster 
+*/
+void BuggyController::calculateSpeeds(int& left, int& right, int delta_angle) {
+	/*
+	* Calculate two RPM Speeds
+	*/
+
+	int slow = default_speed - abs(delta_angle) * 6;
+	int fast = default_speed + abs(delta_angle) * 6;
+
+	//Check if Speeds exceed
+	if (slow <= driveMin)
+		slow = driveMin;
+	if (fast >= driveMax)
+		fast = driveMax;
+
+	/*
+	* Decide which Tire needs to be faster or slower
+	*/
+
+	//Correct to left handside
+	if (delta_angle > AngleThreshold) {
+		if (currentDirection[0] == MOTOR_FORWARD) {
+			left = slow;
+			right = fast;
+		}
+		else {
+			left = fast;
+			right = slow;
+		}
 	}
-	else if(deltaAngle < (AngleThreshold *(-1))) {
-		//Korrektur nach Rechts
-		if (currentDirection[0] == MOTOR_FORWARD)
-			driveConfig(fast_drive, slow_drive, currentDirection[0], currentDirection[1]);
-		else
-			driveConfig(slow_drive, fast_drive, currentDirection[0], currentDirection[1]);
+	//Correct to right handside
+	else if (delta_angle < (AngleThreshold * (-1))) {
+		if (currentDirection[0] == MOTOR_FORWARD) {
+			left = fast;
+			right = slow;
+		}
+		else{
+			left = slow;
+			right = fast;
+		}
 	}
 }
 
@@ -211,24 +263,30 @@ void BuggyController::driveRelease() {
 * Move Buggy in given direction for specific period of time
 */
 void BuggyController::move(int angle, int direction, int duration) {
-	std::cout << "Drive " << angle << " Degree until " << duration << " milliseconds" << std::endl;
+	std::cout << "\n\n\nDrive " << angle << " Degree until " << duration << " milliseconds" << std::endl << std::endl;
 	
-	int angle_goal = MPU6050::angle_z + angle;
-	driveConfig(150, 150, direction, direction);
+	int angle_goal = previous_goal_angle + angle;
+	previous_goal_angle = angle_goal;
+
+	driveConfig(default_speed, default_speed, direction, direction);
 	run(angle_goal, duration);
 	driveRelease();
+	delay(150); 
 }
 
 /*
 * Move Buggy in given direction until angle is reached
 */
 void BuggyController::move(int angle, int direction) {
-	std::cout << "Drive until " << angle << "Degree reached" << std::endl;
-	
-	int angle_goal = MPU6050::angle_z + angle;
-	driveConfig(150, 150, direction, direction);
+	std::cout << "\n\n\nDrive until " << angle << "Degree reached" << std::endl << std::endl;
+
+	int angle_goal = previous_goal_angle + angle;
+	previous_goal_angle = angle_goal;
+
+	driveConfig(default_speed, default_speed, direction, direction);
 	run(angle_goal);
 	driveRelease();
+	delay(150);
 }
 
 /*
@@ -238,4 +296,30 @@ void BuggyController::fun(int duration) {
 	driveConfig(100, 100, MOTOR_FORWARD, MOTOR_BACK);
 	run(-720);
 	driveRelease();
+}
+
+/*
+* Control Buggy live from Terminal
+*/
+void BuggyController::TerminalControl() {
+	char input;
+
+	bool quit = false;
+
+	std::cout << "Press W, A, S, D to move the Buggy " << std::endl;
+
+	while(!quit){
+		//Check Break condition
+		std::cout << "Waiting for Order: ? " << std::endl;
+		std::cin.get(input);
+		//Listen to input
+		
+		switch (input) {
+		case 'w': this->move(0, MOTOR_FORWARD, 5000); break;
+		case 'a': this->move(90, MOTOR_FORWARD); break;
+		case 's': this->move(0, MOTOR_BACK, 5000); break;
+		case 'd': this->move(-90, MOTOR_FORWARD); break;
+		default: std::cout << "invalid input, try again" << std::endl;
+		}
+	}
 }
